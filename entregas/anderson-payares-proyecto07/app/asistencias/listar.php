@@ -3,68 +3,78 @@
 require_once '../conexion.php';
 
 try {
-    // Unimos asistencias con afiliados para ver el nombre y documento
-    $sql = "SELECT a.id_asistencia, af.documento, af.nombre, af.apellido, a.fecha, a.hora, a.observaciones 
-            FROM asistencias a
-            INNER JOIN afiliados af ON a.id_afiliado = af.id_afiliado
-            ORDER BY a.fecha DESC, a.hora DESC";
+    $sql = "SELECT asis.id_asistencia, asis.fecha, asis.hora, asis.observaciones, 
+                   af.nombre, af.apellido, af.documento 
+            FROM asistencias asis
+            INNER JOIN afiliados af ON asis.id_afiliado = af.id_afiliado
+            ORDER BY asis.fecha DESC, asis.hora DESC";
     $stmt = $pdo->query($sql);
     $asistencias = $stmt->fetchAll();
 } catch (PDOException $e) {
-    echo "Error en la consulta: " . $e->getMessage();
-    exit();
+    die("Error en la consulta: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Listado de Asistencias</title>
+    <title>Asistencias - Gym Kings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
+<body class="bg-light p-4">
 
-    <p>
-        <a href="../index.php">Volver al Dashboard</a> | 
-        <a href="registrar.php">Registrar Nueva Asistencia</a>
-    </p>
-    <hr>
+    <div class="container" style="max-width: 1000px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bolder text-dark" style="letter-spacing: -1px;">
+                <i class="bi bi-door-open-fill text-secondary me-2"></i> Historial de Accesos
+            </h2>
+            <a href="../index.php" class="btn btn-outline-dark rounded-pill px-4"><i class="bi bi-house-door"></i> Inicio</a>
+        </div>
 
-    <h1>Control de Asistencias Diarias</h1>
+        <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'eliminado'): ?>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert">
+                <i class="bi bi-trash-fill me-2"></i> Registro de asistencia eliminado.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
-    <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'registrado'): ?>
-        <p style="color: green;"><strong>¡Éxito! La entrada del afiliado ha sido registrada.</strong></p>
-    <?php endif; ?>
-
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID Asistencia</th>
-                <th>Documento</th>
-                <th>Afiliado</th>
-                <th>Fecha</th>
-                <th>Hora de Entrada</th>
-                <th>Observaciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (count($asistencias) > 0): ?>
-                <?php foreach ($asistencias as $asistencia): ?>
+        <div class="table-container shadow-sm">
+            <table class="table align-middle mb-0 table-hover">
+                <thead class="table-dark">
                     <tr>
-                        <td><?php echo $asistencia['id_asistencia']; ?></td>
-                        <td><?php echo htmlspecialchars($asistencia['documento']); ?></td>
-                        <td><?php echo htmlspecialchars($asistencia['nombre'] . " " . $asistencia['apellido']); ?></td>
-                        <td><?php echo htmlspecialchars($asistencia['fecha']); ?></td>
-                        <td><?php echo htmlspecialchars($asistencia['hora']); ?></td>
-                        <td><?php echo htmlspecialchars($asistencia['observaciones']); ?></td>
+                        <th class="ps-4">Documento</th>
+                        <th>Atleta</th>
+                        <th>Fecha y Hora</th>
+                        <th>Método / Observación</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="6">No hay registros de asistencia aún.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-
+                </thead>
+                <tbody>
+                    <?php if (count($asistencias) > 0): ?>
+                        <?php foreach ($asistencias as $asis): ?>
+                            <tr>
+                                <td class="ps-4 text-muted fw-bold"><?php echo htmlspecialchars($asis['documento']); ?></td>
+                                <td class="fw-bold text-dark"><?php echo htmlspecialchars($asis['nombre'] . ' ' . $asis['apellido']); ?></td>
+                                <td>
+                                    <i class="bi bi-calendar-event text-muted me-1"></i> <?php echo $asis['fecha']; ?> <br>
+                                    <i class="bi bi-clock text-muted me-1"></i> <span class="badge bg-light text-dark border"><?php echo $asis['hora']; ?></span>
+                                </td>
+                                <td><span class="fst-italic text-secondary" style="font-size: 0.9rem;"><?php echo htmlspecialchars($asis['observaciones']); ?></span></td>
+                                <td class="text-center">
+                                    <a href="eliminar.php?id=<?php echo $asis['id_asistencia']; ?>" class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="return confirm('¿Seguro que deseas borrar este registro de entrada?');">
+                                        <i class="bi bi-trash-fill"></i> Eliminar
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr><td colspan="5" class="text-center py-5 text-muted">Aún no hay registros de entrada en el sistema.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>

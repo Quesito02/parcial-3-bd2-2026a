@@ -3,78 +3,68 @@
 require_once '../conexion.php';
 
 try {
-    // Consulta usando tus columnas reales de la base de datos 'gym'
-    $sql = "SELECT id_afiliado, documento, nombre, apellido, telefono, correo, fecha_nacimiento FROM afiliados ORDER BY id_afiliado DESC";
+    $sql = "SELECT * FROM afiliados ORDER BY nombre ASC";
     $stmt = $pdo->query($sql);
     $afiliados = $stmt->fetchAll();
 } catch (PDOException $e) {
-    echo "Error en la consulta: " . $e->getMessage();
-    exit();
+    die("Error: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Listado de Afiliados</title>
+    <title>Afiliados - Gym Kings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/css/style.css"> <!-- AQUÍ LLAMAMOS AL ESTILO MÁGICO -->
 </head>
-<body>
+<body class="p-4">
 
-    <p>
-        <a href="../index.php">Volver al Dashboard</a> | 
-        <a href="nuevo.php">Registrar Nuevo Afiliado</a>
-    </p>
-    <hr>
+    <div class="container" style="max-width: 1000px;">
+        <!-- Encabezado del Módulo -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bolder text-dark" style="letter-spacing: -1px;">
+                <i class="bi bi-people-fill text-warning me-2"></i> Directorio de Atletas
+            </h2>
+            <div>
+                <a href="../index.php" class="btn btn-outline-dark me-2 rounded-pill px-4"><i class="bi bi-house-door"></i> Inicio</a>
+                <a href="nuevo.php" class="btn btn-dark rounded-pill px-4"><i class="bi bi-plus-lg"></i> Nuevo Atleta</a>
+            </div>
+        </div>
 
-    <h1>Gestión de Afiliados</h1>
-
-    <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'guardado'): ?>
-        <p style="color: green;"><strong>¡Éxito! El afiliado ha sido registrado correctamente.</strong></p>
-    <?php endif; ?>
-    <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'actualizado'): ?>
-        <p style="color: blue;"><strong>¡Éxito! Los datos del afiliado han sido actualizados.</strong></p>
-    <?php endif; ?>
-    <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'eliminado'): ?>
-        <p style="color: red;"><strong>¡Éxito! El afiliado ha sido eliminado correctamente.</strong></p>
-    <?php endif; ?>
-
-    <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Documento</th>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-                <th>Fecha Nacimiento</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (count($afiliados) > 0): ?>
-                <?php foreach ($afiliados as $afiliado): ?>
+        <!-- Tabla con el nuevo estilo -->
+        <div class="table-container">
+            <table class="table align-middle mb-0">
+                <thead>
                     <tr>
-                        <td><?php echo $afiliado['id_afiliado']; ?></td>
-                        <td><?php echo htmlspecialchars($afiliado['documento']); ?></td>
-                        <td><?php echo htmlspecialchars($afiliado['nombre']); ?></td>
-                        <td><?php echo htmlspecialchars($afiliado['apellido']); ?></td>
+                        <th class="ps-3">Documento</th>
+                        <th>Atleta</th>
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($afiliados as $afiliado): ?>
+                    <tr>
+                        <td class="ps-3 fw-bold text-secondary"><?php echo htmlspecialchars($afiliado['documento']); ?></td>
+                        <td class="fw-bold"><?php echo htmlspecialchars($afiliado['nombre'] . ' ' . $afiliado['apellido']); ?></td>
                         <td><?php echo htmlspecialchars($afiliado['telefono']); ?></td>
-                        <td><?php echo htmlspecialchars($afiliado['correo']); ?></td>
-                        <td><?php echo htmlspecialchars($afiliado['fecha_nacimiento'] ?? ''); ?></td>
                         <td>
-                            <a href="editar.php?id=<?php echo $afiliado['id_afiliado']; ?>">Editar</a> | 
-                            <a href="eliminar.php?id=<?php echo $afiliado['id_afiliado']; ?>" onclick="return confirm('¿Seguro que deseas eliminar este afiliado?');">Eliminar</a>
+                            <span class="badge <?php echo $afiliado['estado'] == 'Activo' ? 'bg-success' : 'bg-danger'; ?> rounded-pill px-3">
+                                <?php echo $afiliado['estado']; ?>
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <a href="perfil.php?id=<?php echo $afiliado['id_afiliado']; ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">Ver Perfil 360</a>
                         </td>
                     </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="8">No hay afiliados registrados en el sistema.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 </body>
 </html>
