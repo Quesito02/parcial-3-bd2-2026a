@@ -2,65 +2,69 @@
 // clases/nueva.php
 require_once '../conexion.php';
 
-try {
-    // Traer a los instructores activos para asignarlos a la clase
-    $stmt = $pdo->query("SELECT id_instructor, nombre, apellido, especialidad FROM instructores WHERE estado = 'Activo' ORDER BY nombre ASC");
-    $instructores = $stmt->fetchAll();
-} catch (PDOException $e) {
-    echo "Error al cargar instructores: " . $e->getMessage();
-    exit();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = $_POST['nombre'];
+    $id_instructor = $_POST['id_instructor'];
+    $horario = $_POST['horario']; // Vinculado a tu columna real VARCHAR 'horario'
+    $cupo = $_POST['cupo_maximo'];
+
+    try {
+        $sql = "INSERT INTO clases (nombre, id_instructor, horario, cupo_maximo) VALUES (?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$nombre, $id_instructor, $horario, $cupo]);
+        header("Location: listar.php");
+        exit();
+    } catch (PDOException $e) {
+        die("Error al programar sesión: " . $e->getMessage());
+    }
 }
+
+$instructores = $pdo->query("SELECT * FROM instructores WHERE estado = 'Activo' ORDER BY nombre ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nueva Clase</title>
+    <title>Programar Clase - Gym Kings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
-
-    <p>
-        <a href="../index.php">Volver al Dashboard</a> | 
-        <a href="listar.php">Cancelar y Volver</a>
-    </p>
-    <hr>
-
-    <h1>Registrar Nueva Clase</h1>
-
-    <form action="guardar.php" method="POST">
-        
-        <p>
-            <label for="nombre">Nombre de la Clase (Ej: Spinning, Yoga):</label><br>
-            <input type="text" id="nombre" name="nombre" required>
-        </p>
-
-        <p>
-            <label for="horario">Horario (Ej: Lunes y Miércoles 6:00 PM):</label><br>
-            <input type="text" id="horario" name="horario" required>
-        </p>
-
-        <p>
-            <label for="cupo_maximo">Cupo Máximo de Asistentes:</label><br>
-            <input type="number" id="cupo_maximo" name="cupo_maximo" required>
-        </p>
-
-        <p>
-            <label for="id_instructor">Instructor a cargo:</label><br>
-            <select id="id_instructor" name="id_instructor" required>
-                <option value="">-- Seleccione un Instructor --</option>
-                <?php foreach ($instructores as $inst): ?>
-                    <option value="<?php echo $inst['id_instructor']; ?>">
-                        <?php echo htmlspecialchars($inst['nombre'] . " " . $inst['apellido'] . " (" . $inst['especialidad'] . ")"); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </p>
-
-        <p>
-            <button type="submit">Guardar Clase</button>
-        </p>
-        
-    </form>
-
+<body class="bg-light p-4">
+    <div class="container" style="max-width: 550px;">
+        <div class="card shadow border-0 mt-4">
+            <div class="card-header bg-dark text-white fw-bold py-3">Apertura de Clase Grupal</div>
+            <div class="card-body p-4">
+                <form action="nueva.php" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre de la Disciplina</label>
+                        <input type="text" name="nombre" class="form-control" placeholder="Ej: Spinning Pro, Crossfit, Zumba..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Instructor a Cargo</label>
+                        <select name="id_instructor" class="form-select" required>
+                            <option value="">-- Asignar Líder de Sesión --</option>
+                            <?php foreach ($instructores as $i): ?>
+                                <option value="<?php echo $i['id_instructor']; ?>"><?php echo htmlspecialchars($i['nombre'] . ' ' . $i['apellido'] . ' (' . $i['especialidad'] . ')'); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Horario Establecido</label>
+                            <input type="text" name="horario" class="form-control" placeholder="Ej: Martes y Jueves 7:00 PM" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Cupo Límite</label>
+                            <input type="number" name="cupo_maximo" class="form-control" placeholder="Ej: 20" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="listar.php" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-dark rounded-pill px-4">Abrir Agenda</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

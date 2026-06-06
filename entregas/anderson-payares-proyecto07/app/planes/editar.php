@@ -2,101 +2,70 @@
 // planes/editar.php
 require_once '../conexion.php';
 
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: listar.php");
-    exit();
-}
-
+if (!isset($_GET['id'])) { header("Location: listar.php"); exit(); }
 $id = $_GET['id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = $_POST['nombre'];
-    $duracion_dias = $_POST['duracion_dias'];
     $precio = $_POST['precio'];
-    $beneficios = $_POST['beneficios'];
+    $duracion = $_POST['duracion_dias'];
     $estado = $_POST['estado'];
 
     try {
-        $sql_update = "UPDATE planes SET nombre = ?, duracion_dias = ?, precio = ?, beneficios = ?, estado = ? WHERE id_plan = ?";
-        $stmt_update = $pdo->prepare($sql_update);
-        $stmt_update->execute([$nombre, $duracion_dias, $precio, $beneficios, $estado, $id]);
-
-        header("Location: listar.php?mensaje=actualizado");
+        $sql = "UPDATE planes SET nombre=?, precio=?, duracion_dias=?, estado=? WHERE id_plan=?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$nombre, $precio, $duracion, $estado, $id]);
+        header("Location: listar.php?mensaje=editado");
         exit();
     } catch (PDOException $e) {
-        echo "<h1>Error al actualizar</h1>";
-        echo "<p>" . $e->getMessage() . "</p>";
-        echo "<br><a href='listar.php'>Volver al listado</a>";
-        exit();
+        die("Error al modificar: " . $e->getMessage());
     }
 }
 
-try {
-    $sql_select = "SELECT * FROM planes WHERE id_plan = ?";
-    $stmt_select = $pdo->prepare($sql_select);
-    $stmt_select->execute([$id]);
-    $plan = $stmt_select->fetch();
-
-    if (!$plan) {
-        echo "El plan no existe.";
-        exit();
-    }
-} catch (PDOException $e) {
-    echo "Error: " . $e->getMessage();
-    exit();
-}
+$stmt = $pdo->prepare("SELECT * FROM planes WHERE id_plan = ?");
+$stmt->execute([$id]);
+$plan = $stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Plan</title>
+    <title>Editar Plan - Gym Kings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
-
-    <p>
-        <a href="../index.php">Volver al Dashboard</a> | 
-        <a href="listar.php">Cancelar y Volver</a>
-    </p>
-    <hr>
-
-    <h1>Editar Plan</h1>
-
-    <form action="editar.php?id=<?php echo $id; ?>" method="POST">
-        
-        <p>
-            <label for="nombre">Nombre del Plan:</label><br>
-            <input type="text" id="nombre" name="nombre" value="<?php echo htmlspecialchars($plan['nombre']); ?>" required>
-        </p>
-
-        <p>
-            <label for="duracion_dias">Duración en Días:</label><br>
-            <input type="number" id="duracion_dias" name="duracion_dias" value="<?php echo htmlspecialchars($plan['duracion_dias']); ?>" required>
-        </p>
-
-        <p>
-            <label for="precio">Precio:</label><br>
-            <input type="number" step="0.01" id="precio" name="precio" value="<?php echo htmlspecialchars($plan['precio']); ?>" required>
-        </p>
-
-        <p>
-            <label for="beneficios">Beneficios:</label><br>
-            <textarea id="beneficios" name="beneficios" rows="4" cols="30"><?php echo htmlspecialchars($plan['beneficios']); ?></textarea>
-        </p>
-
-        <p>
-            <label for="estado">Estado:</label><br>
-            <select id="estado" name="estado">
-                <option value="Activo" <?php echo ($plan['estado'] == 'Activo') ? 'selected' : ''; ?>>Activo</option>
-                <option value="Inactivo" <?php echo ($plan['estado'] == 'Inactivo') ? 'selected' : ''; ?>>Inactivo</option>
-            </select>
-        </p>
-
-        <p>
-            <button type="submit">Guardar Cambios</button>
-        </p>
-        
-    </form>
-
+<body class="bg-light p-4">
+    <div class="container" style="max-width: 500px;">
+        <div class="card shadow border-0 mt-4">
+            <div class="card-header bg-dark text-white fw-bold py-3">Configurar Plan de Suscripción</div>
+            <div class="card-body p-4">
+                <form action="editar.php?id=<?php echo $id; ?>" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre comercial</label>
+                        <input type="text" name="nombre" class="form-control" value="<?php echo htmlspecialchars($plan['nombre']); ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Inversión ($)</label>
+                        <input type="number" name="precio" class="form-control" value="<?php echo $plan['precio']; ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Días del Ciclo</label>
+                        <input type="number" name="duracion_dias" class="form-control" value="<?php echo $plan['duracion_dias']; ?>" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Estado de Oferta</label>
+                        <select name="estado" class="form-select">
+                            <option value="Activo" <?php echo $plan['estado'] == 'Activo' ? 'selected' : ''; ?>>Activo (Disponible en caja)</option>
+                            <option value="Inactivo" <?php echo $plan['estado'] == 'Inactivo' ? 'selected' : ''; ?>>Inactivo (Archivado)</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="listar.php" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-dark rounded-pill px-4">Actualizar Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

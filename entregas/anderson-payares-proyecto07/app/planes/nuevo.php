@@ -1,57 +1,56 @@
 <?php
 // planes/nuevo.php
+require_once '../conexion.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = $_POST['nombre'];
+    $precio = $_POST['precio']; // Ajustado a tu columna real 'precio'
+    $duracion = $_POST['duracion_dias'];
+
+    try {
+        $sql = "INSERT INTO planes (nombre, precio, duracion_dias, estado) VALUES (?, ?, ?, 'Activo')";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$nombre, $precio, $duracion]);
+        header("Location: listar.php");
+        exit();
+    } catch (PDOException $e) {
+        die("Error al guardar: " . $e->getMessage());
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nuevo Plan</title>
+    <title>Nuevo Plan - Gym Kings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
-
-    <p>
-        <a href="../index.php">Volver al Dashboard</a> | 
-        <a href="listar.php">Cancelar y Volver</a>
-    </p>
-    <hr>
-
-    <h1>Registrar Nuevo Plan</h1>
-
-    <form action="guardar.php" method="POST">
-        
-        <p>
-            <label for="nombre">Nombre del Plan:</label><br>
-            <input type="text" id="nombre" name="nombre" required>
-        </p>
-
-        <p>
-            <label for="duracion_dias">Duración en Días (Ej: 30, 90, 365):</label><br>
-            <input type="number" id="duracion_dias" name="duracion_dias" required>
-        </p>
-
-        <p>
-            <label for="precio">Precio:</label><br>
-            <input type="number" step="0.01" id="precio" name="precio" required>
-        </p>
-
-        <p>
-            <label for="beneficios">Beneficios:</label><br>
-            <textarea id="beneficios" name="beneficios" rows="4" cols="30"></textarea>
-        </p>
-
-        <p>
-            <label for="estado">Estado:</label><br>
-            <select id="estado" name="estado">
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-            </select>
-        </p>
-
-        <p>
-            <button type="submit">Guardar Plan</button>
-        </p>
-        
-    </form>
-
+<body class="bg-light p-4">
+    <div class="container" style="max-width: 500px;">
+        <div class="card shadow border-0 mt-4">
+            <div class="card-header bg-dark text-white fw-bold py-3">Crear Plan de Entrenamiento</div>
+            <div class="card-body p-4">
+                <form action="nuevo.php" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre del Oferta</label>
+                        <input type="text" name="nombre" class="form-control" placeholder="Ej: VIP Black, Trimestral..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Precio / Valor ($)</label>
+                        <input type="number" name="precio" class="form-control" placeholder="Monto en pesos colombianos" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Duración (Días de Cobertura)</label>
+                        <input type="number" name="duracion_dias" class="form-control" placeholder="Ej: 30, 90, 365" required>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="listar.php" class="btn btn-secondary rounded-pill px-4">Volver</a>
+                        <button type="submit" class="btn btn-dark rounded-pill px-4">Publicar Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
