@@ -23,8 +23,3 @@ desktop.ini
 *.bak
 *.tmp
 *.log
-
-# Ignorar claves de API y configuraciones locales
-api_key.php
-app/api_key.php
-entregas/anderson-payares-proyecto07/app/api_key.php
