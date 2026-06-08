@@ -1,6 +1,7 @@
 <?php
 // app/index.php
 require_once 'conexion.php';
+require_once 'api_key.php'; // <-- Conexión a tu archivo secreto protegido
 
 // --- LÓGICA PARTE 1: CHECK-IN EXPRESS ---
 $mostrarModal = false;
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['express_doc'])) {
     }
 }
 
-// --- LÓGICA PARTE 2: SMARTBOT CONVERSACIONAL Y TEMPORIZADOR ---
+// --- LÓGICA PARTE 2: SMARTBOT CON API REAL DE GOOGLE GEMINI ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
     header('Content-Type: application/json');
     $accion = $_POST['bot_action'];
@@ -55,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
         
         if ($atletaBot) {
             $nombre = $atletaBot['nombre'];
-            $html = "¡Acceso concedido, $nombre! 🔓 Tienes 5 minutos de chat privado habilitado. ¿En qué te ayudo hoy?";
+            $html = "¡Acceso concedido, $nombre! 🔓 IA Conectada. Tienes 5 minutos de chat privado habilitado. ¿En qué te ayudo hoy?";
             echo json_encode(['status' => 'AUTH_SUCCESS', 'nombre' => $nombre, 'html' => $html]);
         } else {
             echo json_encode(['status' => 'ERROR', 'html' => 'Documento no encontrado.']);
@@ -64,26 +65,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
     }
     
     if ($accion === 'chat') {
-        $mensaje = strtolower(trim($_POST['mensaje']));
-        $respuesta = "Esa es una gran pregunta. Para detalles muy específicos, te recomiendo consultar directamente con tu instructor de planta hoy.";
+        $mensaje = trim($_POST['mensaje']);
+        $docUsuario = trim($_POST['documento_usuario']);
 
-        if (strpos($mensaje, 'sueño') !== false || strpos($mensaje, 'dormir') !== false) {
-            $respuesta = "Intenta dormir entre 7 y 8 horas ininterrumpidas para máxima recuperación. 🛏️";
-        } 
-        elseif (strpos($mensaje, 'comida') !== false || strpos($mensaje, 'dieta') !== false) {
-            $respuesta = "Asegúrate de consumir buena proteína post-entreno y carbohidratos complejos para energía duradera. 🥩";
-        }
-        elseif (strpos($mensaje, 'agua') !== false || strpos($mensaje, 'calor') !== false) {
-            $respuesta = "En este clima cálido es vital hidratarse constantemente. Toma 3 a 4 litros de agua diarios. 💧";
-        }
-        elseif (strpos($mensaje, 'rutina') !== false || strpos($mensaje, 'ejercicio') !== false) {
-            $respuesta = "Calienta siempre antes de empezar. Mantén de 8 a 12 reps priorizando técnica sobre peso. 🏋️‍♂️";
-        }
-        elseif (strpos($mensaje, 'creatina') !== false || strpos($mensaje, 'proteina') !== false) {
-            $respuesta = "Toma 5g de creatina diarios para fuerza. La proteína en polvo úsala solo si te falta comida sólida. 🥤";
-        }
+        // 1. Buscamos el perfil del atleta para darle contexto a la IA
+        $stmtAtleta = $pdo->prepare("SELECT nombre, somatotipo, objetivo FROM afiliados WHERE documento = ?");
+        $stmtAtleta->execute([$docUsuario]);
+        $atleta = $stmtAtleta->fetch();
+        
+        $nombreAtleta = $atleta ? $atleta['nombre'] : 'Atleta';
+        $tipoCuerpo = $atleta ? $atleta['somatotipo'] : 'Mesomorfo';
+        $meta = $atleta ? $atleta['objetivo'] : 'Mantenimiento';
 
-        echo json_encode(['status' => 'CHAT_OK', 'html' => $respuesta]);
+        // 2. CONFIGURA AQUÍ TU API KEY (Llamando a la variable secreta)
+        $apiKey = $clave_secreta_gemini; 
+        
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey;
+
+        // 3. El "Prompt" Maestro (Personalidad de la IA)
+        $promptContexto = "Eres el 'Smart Coach', un entrenador personal de inteligencia artificial del gimnasio 'Gym Kings'. Sé muy breve, motivador y directo (máximo 3 a 4 líneas por respuesta). Tu cliente actual se llama $nombreAtleta, su tipo de cuerpo es $tipoCuerpo y su objetivo actual en el gimnasio es $meta. Responde a su siguiente duda basándote estrictamente en su perfil físico y sus metas, usa emojis. La duda es: " . $mensaje;
+
+        $data = [
+            "contents" => [
+                ["parts" => [["text" => $promptContexto]]]
+            ]
+        ];
+        $json_data = json_encode($data);
+
+        // 4. Petición cURL al servidor de Google
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $result = json_decode($response, true);
+        
+        // 5. Devolver la respuesta al chat
+        if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
+            $textoBot = $result['candidates'][0]['content']['parts'][0]['text'];
+            // Convertimos asteriscos de Markdown a negritas HTML
+            $textoFormat = nl2br(preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $textoBot));
+            echo json_encode(['status' => 'CHAT_OK', 'html' => $textoFormat]);
+        } else {
+            echo json_encode(['status' => 'ERROR', 'html' => 'Hubo una desconexión temporal con los servidores satelitales del Smart Coach.']);
+        }
         exit();
     }
 }
@@ -98,38 +127,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { 
-            /* FALLBACK COLOR */
             background-color: #111;
-            /* CONFIGURACIÓN DE LA IMAGEN DE FONDO ( hazlo por mi ) */
-            /* Se asume que la imagen se llama 'gym-background.jpg' dentro de assets/img/ */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('assets/img/gym-background.jpg');            background-size: cover;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('assets/img/gym-background.jpg');
+            background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed; /* Efecto Parallax opcional */
-            
+            background-attachment: fixed;
             height: 100vh; 
             display: flex; 
             flex-direction: column; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #fff; /* Texto blanco base para la imagen oscura */
+            color: #fff; 
         }
         .center-wrapper { flex-grow: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        
-        /* Ajuste de color para textos centrales sobre fondo oscuro */
         .center-wrapper h1 { color: #fff !important; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .center-wrapper h5 { color: #ddd !important; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-
         .search-box { width: 100%; max-width: 650px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); border-radius: 50px; overflow: hidden; transition: transform 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .search-box:focus-within { transform: scale(1.03); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
         .search-input { border: none; padding: 20px 30px; font-size: 1.3rem; background: #fff; color: #000; }
         .search-input:focus { outline: none; box-shadow: none; background: #fff; color: #000; }
         .search-btn { background: #ffc107; color: #000; border: none; padding: 0 35px; font-size: 1.5rem; transition: background 0.3s; }
         .search-btn:hover { background: #fff; color: #000; }
-        
-        /* Ajuste de etiquetas en las esquinas */
         .checkin-express-menu { position: absolute; top: 25px; left: 30px; max-width: 280px; }
         .checkin-express-menu label { color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        
         .admin-menu { position: absolute; top: 25px; right: 30px; }
 
         /* Estilos del Bot */
@@ -193,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
                     <i class="bi bi-cpu-fill text-warning me-2" style="font-size: 1.2rem;"></i>
                     <div>
                         <span class="fw-bold d-block" style="font-size: 0.95rem; line-height: 1;">Smart Coach</span>
-                        <small class="text-warning" style="font-size: 0.75rem;">En línea</small>
+                        <small class="text-warning" style="font-size: 0.75rem;">Online - Gemini AI</small>
                     </div>
                 </div>
                 <div class="bot-timer" id="timerDisplay">5:00</div>
@@ -202,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
             
             <div class="bot-body" id="chatBody">
                 <div class="chat-bubble-bot">
-                    ¡Hola! 👑 Soy tu coach. Digita tu documento abajo para habilitar tu chat seguro:
+                    ¡Hola! 👑 Soy tu coach impulsado por IA. Digita tu documento abajo para habilitar tu chat seguro:
                 </div>
             </div>
             
@@ -247,7 +267,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // --- JAVASCRIPT: SMARTBOT LÓGICA ---
         const openBotBtn = document.getElementById('openBotBtn');
         const closeBotBtn = document.getElementById('closeBotBtn');
         const botCard = document.getElementById('botCard');
@@ -259,6 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
         let isSessionActive = false;
         let countdownInterval;
         let timeRemaining = 300; 
+        let documentoActual = ''; // Guardamos la sesión en el cliente
 
         openBotBtn.addEventListener('click', () => { botCard.style.display = 'flex'; openBotBtn.style.display = 'none'; });
         closeBotBtn.addEventListener('click', () => { botCard.style.display = 'none'; openBotBtn.style.display = 'flex'; });
@@ -283,6 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
                 if(timeRemaining <= 0) {
                     clearInterval(countdownInterval);
                     isSessionActive = false;
+                    documentoActual = '';
                     timerDisplay.style.display = 'none';
                     botInput.placeholder = "Tu número de documento...";
                     printMessage('bot', '⏳ <strong>Tu sesión ha expirado.</strong> Ingresa tu documento nuevamente.');
@@ -296,27 +317,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
             if(!inputVal) return;
             printMessage('user', inputVal);
             botInput.value = "";
+            
             const formData = new FormData();
             if(!isSessionActive) {
                 formData.append('bot_action', 'login');
                 formData.append('documento', inputVal);
+                documentoActual = inputVal; // Almacenamos para las preguntas
             } else {
                 formData.append('bot_action', 'chat');
                 formData.append('mensaje', inputVal);
+                formData.append('documento_usuario', documentoActual); // Enviamos el doc con la pregunta
+                
+                // Mostrar indicador de "Escribiendo..." mientras la IA piensa
+                const thinkingDiv = document.createElement('div');
+                thinkingDiv.id = 'bot-typing';
+                thinkingDiv.className = 'chat-bubble-bot text-muted';
+                thinkingDiv.innerHTML = '<small><i>El coach está escribiendo...</i></small>';
+                chatBody.appendChild(thinkingDiv);
+                chatBody.scrollTop = chatBody.scrollHeight;
             }
+            
             fetch('index.php', { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
+                const typingIndicator = document.getElementById('bot-typing');
+                if (typingIndicator) typingIndicator.remove(); // Quitamos el "Escribiendo..."
+
                 if(data.status === 'AUTH_SUCCESS') {
                     isSessionActive = true;
-                    botInput.placeholder = "Escribe tu duda aquí...";
+                    botInput.placeholder = "Pregúntale a la IA...";
                     printMessage('bot', data.html);
                     startTimer();
                 } else if(data.status === 'CHAT_OK' || data.status === 'ERROR') {
                     printMessage('bot', data.html);
                 }
             })
-            .catch(error => console.error("Error:", error));
+            .catch(error => {
+                console.error("Error:", error);
+                const typingIndicator = document.getElementById('bot-typing');
+                if (typingIndicator) typingIndicator.remove();
+                printMessage('bot', 'Hubo un error de red. Intenta nuevamente.');
+            });
         });
     </script>
 
