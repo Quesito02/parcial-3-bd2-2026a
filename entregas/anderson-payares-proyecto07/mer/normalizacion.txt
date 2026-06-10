@@ -1,0 +1,129 @@
+================================================================================
+REPOSITORIO: GYM KINGS (PROYECTO 07)
+OBJETO DE ANÁLISIS: SCHEMA RELACIONAL 'GYM' (8 ENTIDADES)
+FECHA DE EVALUACIÓN: 10-06-2026
+MÉTODO DE COMPROBACIÓN: RIGID COMPLIANCE TESTING (1NF, 2NF, 3NF)
+================================================================================
+
+--------------------------------------------------------------------------------
+FASE 1: DIAGNÓSTICO Y PRUEBA DE LA PRIMERA FORMA NORMAL (1NF)
+--------------------------------------------------------------------------------
+CRITERIO DE EVALUACIÓN:
+1.1. Todos los atributos deben ser atómicos (valores indivisibles).
+1.2. No deben existir grupos repetitivos de columnas o vectores horizontales.
+1.3. Cada entidad debe poseer una Clave Primaria (PK) única y definida.
+
+EJECUCIÓN DE PRUEBAS DE ATOMICIDAD:
+* Tabla 'afiliados'     -> Atributos separados (nombre, apellido, correo). [OK]
+* Tabla 'instructores'  -> Atributos separados (nombre, apellido, especialidad). [OK]
+* Tabla 'planes'        -> Campos simples de control comercial. [OK]
+
+EJECUCIÓN DE PRUEBAS DE COMPORTAMIENTO VERTICAL (NO REPETICIÓN):
+* COMPROBACIÓN: ¿Maneja las asistencias del atleta dentro de la tabla de afiliados 
+  usando columnas correlativas (ej. asis1, asis2, asis3)?
+  R/ NO. Las asistencias se registran de forma vertical en la entidad independiente 
+  'asistencias', donde cada fila es un evento único enlazado por 'id_afiliado'. [OK]
+
+EJECUCIÓN DE PRUEBAS DE IDENTIFICACIÓN ÚNICA (PRIMARY KEYS):
+* `afiliados`      -> PK detectada: `id_afiliado` (INT AUTO_INCREMENT) [OK]
+* `planes`         -> PK detectada: `id_plan` (INT AUTO_INCREMENT) [OK]
+* `membresias`     -> PK detectada: `id_membresia` (INT AUTO_INCREMENT) [OK]
+* `asistencias`    -> PK detectada: `id_asistencia` (INT AUTO_INCREMENT) [OK]
+* `instructores`   -> PK detectada: `id_instructor` (INT AUTO_INCREMENT) [OK]
+* `clases`         -> PK detectada: `id_clase` (INT AUTO_INCREMENT) [OK]
+* `inscripciones`  -> PK detectada: `id_inscripcion` (INT AUTO_INCREMENT) [OK]
+* `bonos`          -> PK detectada: `id_bono` (INT AUTO_INCREMENT) [OK]
+
+>>>> ESTADO DEL TEST 1NF: [ CORRECTO / PASSED ]
+>>>> CONCLUSIÓN: La base de datos es plana, atómica y posee identidad unívoca.
+
+--------------------------------------------------------------------------------
+FASE 2: DIAGNÓSTICO Y PRUEBA DE LA SEGUNDA FORMA NORMAL (2NF)
+--------------------------------------------------------------------------------
+CRITERIO DE EVALUACIÓN:
+2.1. El esquema debe cumplir obligatoriamente con la 1NF (Validado).
+2.2. Todos los atributos que no formen parte de la llave primaria deben depender 
+     de forma COMPLETA de dicha llave (Eliminar dependencias parciales).
+
+ANÁLISIS DE ARQUITECTURA DE LLAVES (ANTI-DEPENDENCIAS PARCIALES):
+* Nota de Ingeniería: Las dependencias parciales solo ocurren cuando existen 
+  llaves primarias compuestas (llaves formadas por dos o más columnas combinadas), 
+  donde un dato descriptivo depende solo de una mitad de la llave y no de la otra.
+
+COMPROBACIÓN DE CAMPOS POR ENTIDAD COMERCIAL:
+* Tabla 'membresias': ¿Los atributos 'fecha_inicio' o 'valor_pagado' dependen 
+  parcialmente de alguna columna? 
+  R/ NO. Al poseer una PK única simple (`id_membresia`), todos los campos de la 
+  fila dependen enteramente de ese ID de factura. El acoplamiento es total. [OK]
+
+* Tabla 'inscripciones': ¿La 'fecha_inscripcion' depende solo del afiliado o de la clase?
+  R/ NO. Depende del hecho completo de la reservación, representado e identificado 
+  de forma íntegra por la llave primaria única `id_inscripcion`. [OK]
+
+* Resto de tablas (`planes`, `instructores`, `clases`, `bonos`, `asistencias`): 
+  Implementan llaves primarias subrogadas de un solo campo entero autoincremental. 
+  No existen llaves compuestas en ninguna parte del MER.
+
+>>>> ESTADO DEL TEST 2NF: [ CORRECTO / PASSED ]
+>>>> CONCLUSIÓN: Se eliminaron de raíz las dependencias parciales del negocio.
+
+--------------------------------------------------------------------------------
+FASE 3: DIAGNÓSTICO Y PRUEBA DE LA TERCERA FORMA NORMAL (3NF)
+--------------------------------------------------------------------------------
+CRITERIO DE EVALUACIÓN:
+3.1. El esquema debe cumplir obligatoriamente con la 2NF (Validado).
+3.2. Ningún atributo no-llave puede depender de otro atributo no-llave. Se deben 
+     extirpar las dependencias transitivas (Todo debe depender de la PK).
+
+PRUEBA DE RESTRICCIÓN DE TRANSITIVIDAD EN TRANSACCIONES FINANCIERAS:
+* CASO CRÍTICO: Evaluación de la tabla `membresias`.
+  - Atributos No-Llave: `fecha_venta`, `fecha_inicio`, `fecha_fin`, `valor_pagado`, `estado`.
+  - Llaves Foráneas (FK): `id_afiliado`, `id_plan`.
+  - COMPROBACIÓN: ¿La tabla membresías almacena el nombre del afiliado, su correo, 
+    el nombre del plan o los días de duración?
+    R/ NO. Esos datos pertenecen a sus propias tablas. Si se guardaran en 
+    membresías, el campo 'nombre_plan' dependería de 'id_plan', y este de 
+    'id_membresia', creando una transitividad ilegal. El MER almacena solo las 
+    FK y los datos puros del contrato. [OK]
+
+PRUEBA DE RESTRICCIÓN DE TRANSITIVIDAD EN PLANIFICACIÓN OPERATIVA:
+* CASO CRÍTICO: Evaluación de la tabla `clases`.
+  - Atributos No-Llave: `nombre`, `horario`, `cupo_maximo`.
+  - Llaves Foráneas (FK): `id_instructor`.
+  - COMPROBACIÓN: ¿La tabla clases duplica el teléfono o la especialidad del coach?
+    R/ NO. Esos atributos residen únicamente en `instructores`. La tabla `clases` 
+    solo guarda el `id_instructor` para saber quién dicta la sesión. El teléfono 
+    del instructor depende de su ID, no del ID de la clase de gimnasio. [OK]
+
+PRUEBA DE RESTRICCIÓN EN HISTÓRICOS DE ENTRADAS:
+* CASO CRÍTICO: Evaluación de la tabla `asistencias`.
+  - Atributos No-Llave: `fecha`, `hora`, `observaciones`.
+  - Llaves Foráneas (FK): `id_afiliado`.
+  - COMPROBACIÓN: ¿La tabla guarda datos físicos del atleta como peso o estatura?
+    R/ NO. Esos datos son dinámicos de la ficha del afiliado. En asistencias solo 
+    se guarda el evento cronológico del ingreso/salida amarrado a la FK. [OK]
+
+>>>> ESTADO DEL TEST 3NF: [ CORRECTO / PASSED ]
+>>>> CONCLUSIÓN: No existen dependencias transitivas en el esquema. Cada dato 
+                 descriptivo depende exclusivamente de la clave primaria.
+
+================================================================================
+MATRIZ DE CONFORMIDAD DE CALIDAD (SUMMARY REPORT)
+================================================================================
+TABLA          |  1NF (ATOMICIDAD)  |  2NF (COMPLETA)  |  3NF (DIRECTA)  | ESTADO
+--------------------------------------------------------------------------------
+afiliados      |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+planes         |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+membresias     |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+asistencias    |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+instructores   |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+clases         |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+inscripciones  |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+bonos          |      PASSED        |      PASSED      |     PASSED      | CORRECTO
+--------------------------------------------------------------------------------
+
+RESULTADO GENERAL DE LA COMPROBACIÓN:
+El Modelo Entidad-Relación de Gym Kings se encuentra en un estado de normalización 
+de nivel 3NF (Tercera Forma Normal). La base de datos es óptima para producción, 
+carece de redundancia de texto y está blindada contra anomalías transaccionales.
+================================================================================
