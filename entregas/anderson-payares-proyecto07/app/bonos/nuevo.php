@@ -31,7 +31,7 @@ $afiliados = $pdo->query("SELECT id_afiliado, nombre, apellido, documento FROM a
     <title>Otorgar Bono - Gym Kings</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=1.1">
 </head>
 <body class="bg-light p-4">
     <div class="container" style="max-width: 600px;">

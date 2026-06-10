@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
         $respuesta = "Esa es una gran pregunta. Para detalles muy específicos, te recomiendo consultar directamente con tu instructor de planta hoy.";
 
         if (strpos($mensaje, 'sueño') !== false || strpos($mensaje, 'dormir') !== false) {
-            $respuesta = "Intenta dormir entre 7 y 8 horas ininterrumpidas para máxima recuperación. 🛏️";
+            $respuesta = "Intenta dormir entre 7 y 8 hours ininterrumpidas para máxima recuperación. 🛏️";
         } 
         elseif (strpos($mensaje, 'comida') !== false || strpos($mensaje, 'dieta') !== false) {
             $respuesta = "Asegúrate de consumir buena proteína post-entreno y carbohidratos complejos para energía duradera. 🥩";
@@ -93,13 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Kings - Inicio</title>
+    <title>Gym Kings - Inicio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { 
             background-color: #111;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('assets/img/gym-background.jpg');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url('assets/img/gym-background.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -111,22 +111,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
             color: #fff; 
         }
         .center-wrapper { flex-grow: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .center-wrapper h1 { color: #fff !important; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .center-wrapper h1 { color: #fff !important; text-shadow: 0 4px 15px rgba(255,193,7,0.3); }
         .center-wrapper h5 { color: #ddd !important; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .search-box { width: 100%; max-width: 650px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); border-radius: 50px; overflow: hidden; transition: transform 0.2s; border: 1px solid rgba(255,255,255,0.1); }
-        .search-box:focus-within { transform: scale(1.03); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
+        
+        /* ILUMINACIÓN AVANZADA PARA EL BUSCADOR EXTERNO */
+        .search-box { 
+            width: 100%; 
+            max-width: 650px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
+            border-radius: 50px; 
+            overflow: hidden; 
+            transition: all 0.3s ease; 
+            border: 1px solid rgba(255, 193, 7, 0.15); 
+        }
+        .search-box:focus-within { 
+            transform: scale(1.02); 
+            box-shadow: 0 0 35px rgba(255, 193, 7, 0.35); 
+            border-color: #ffc107;
+        }
         .search-input { border: none; padding: 20px 30px; font-size: 1.3rem; background: #fff; color: #000; }
         .search-input:focus { outline: none; box-shadow: none; background: #fff; color: #000; }
         .search-btn { background: #ffc107; color: #000; border: none; padding: 0 35px; font-size: 1.5rem; transition: background 0.3s; }
         .search-btn:hover { background: #fff; color: #000; }
         .checkin-express-menu { position: absolute; top: 25px; left: 30px; max-width: 280px; }
         .checkin-express-menu label { color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        
+        /* ILUMINACIÓN EN MENÚ DE MÓDULOS */
         .admin-menu { position: absolute; top: 25px; right: 30px; }
+        .admin-menu .btn-warning {
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.2) !important;
+            transition: all 0.3s ease;
+        }
+        .admin-menu .btn-warning:hover {
+            box-shadow: 0 0 25px rgba(255, 193, 7, 0.5) !important;
+        }
 
         /* Estilos del Bot */
         .bot-wrapper { position: fixed; bottom: 25px; right: 30px; z-index: 1050; }
         .bot-bubble { width: 65px; height: 65px; background: #212529; color: #ffc107; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.5); transition: all 0.3s; border: 2px solid #ffc107; }
-        .bot-bubble:hover { transform: scale(1.1) rotate(5deg); background: #ffc107; color: #000; }
+        .bot-bubble:hover { transform: scale(1.1) rotate(5deg); background: #ffc107; color: #000; box-shadow: 0 0 20px rgba(255, 193, 7, 0.6); }
         .bot-card { width: 350px; height: 480px; display: none; flex-direction: column; background: white; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.4); overflow: hidden; border: 1px solid rgba(0,0,0,0.08); color: #000; }
         .bot-header { background: #212529; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .bot-timer { font-size: 0.8rem; background: #ffc107; color: #000; padding: 2px 8px; border-radius: 10px; font-weight: bold; display: none; }
@@ -159,6 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
             <li><a class="dropdown-item py-2 rounded" href="membresias/listar.php"><i class="bi bi-tags me-2 text-info"></i> Membresías</a></li>
             <li><a class="dropdown-item py-2 rounded" href="clases/listar.php"><i class="bi bi-bicycle me-2 text-warning"></i> Clases</a></li>
             <li><a class="dropdown-item py-2 rounded" href="asistencias/listar.php"><i class="bi bi-door-open me-2 text-secondary"></i> Asistencias</a></li>
+            <li><a class="dropdown-item py-2 rounded" href="ingresos.php"><i class="bi bi-graph-up-arrow me-2 text-success"></i> Contabilidad y Reportes</a></li>
+            <li><a class="dropdown-item py-2 rounded" href="backup.php"><i class="bi bi-shield-lock me-2 text-info"></i> Copia de Seguridad</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item py-2 rounded" href="bonos/listar.php"><i class="bi bi-gift-fill me-2 text-danger"></i> King Rewards</a></li>
             <li><a class="dropdown-item py-2 text-danger fw-bold rounded" href="vencimientos/listar.php"><i class="bi bi-exclamation-triangle me-2"></i> Vencimientos</a></li>
@@ -166,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bot_action'])) {
     </div>
 
     <div class="center-wrapper text-center px-4">
-        <i class="bi bi-award-fill text-warning mb-2" style="font-size: 5.5rem; filter: drop-shadow(0 0 15px rgba(255,193,7,0.6));"></i>
+        <i class="bi bi-award-fill text-warning mb-2" style="font-size: 5.5rem; filter: drop-shadow(0 0 20px rgba(255,193,7,0.65));"></i>
         <h1 class="display-1 fw-bolder mb-1" style="letter-spacing: -3px;">GYM KINGS</h1>
         <h5 class="fw-light mb-4 fst-italic">"Estando con los buenos, nos volveremos mejores."</h5>
         

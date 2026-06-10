@@ -43,6 +43,8 @@ $afiliado = $stmt->fetch();
     <meta charset="UTF-8">
     <title>Editar Afiliado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css?v=1.1">
+    
 </head>
 <body class="bg-light p-4">
     <div class="container" style="max-width: 600px;">

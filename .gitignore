@@ -23,3 +23,9 @@ desktop.ini
 *.bak
 *.tmp
 *.log
+
+# Ignorar todos los respaldos y archivos de bases de datos de XAMPP
+*.sql
+
+# Ignorar si creas una carpeta llamada "backups" para guardarlos dentro del proyecto
+backup.php
