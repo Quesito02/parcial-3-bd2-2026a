@@ -1,85 +1,102 @@
 <?php
-// clases/listar.php
-require_once '../conexion.php';
+// app/clases/listar.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-try {
-    $sql = "SELECT c.*, i.nombre AS instructor_nombre, i.apellido AS instructor_apellido 
-            FROM clases c 
-            LEFT JOIN instructores i ON c.id_instructor = i.id_instructor 
-            ORDER BY c.id_clase DESC";
-    $stmt = $pdo->query($sql);
-    $clases = $stmt->fetchAll();
-} catch (PDOException $e) {
-    die("Error en la consulta: " . $e->getMessage());
+require_once '../conexion.php'; 
+
+$mensaje = "";
+
+$clases_programadas = [
+    1 => ['disciplina' => 'Spinning Pro', 'instructor' => 'Carlos Mendoza', 'hora' => '06:00 AM', 'cupo_max' => 20, 'icono' => 'bi-bicycle', 'color' => 'text-warning'],
+    2 => ['disciplina' => 'CrossFit Kings', 'instructor' => 'Diana Robledo', 'hora' => '08:00 AM', 'cupo_max' => 15, 'icono' => 'bi-lightning-fill', 'color' => 'text-danger'],
+    3 => ['disciplina' => 'Boxeo de Sombra', 'instructor' => 'Jairo Ruiz', 'hora' => '06:30 PM', 'cupo_max' => 12, 'icono' => 'bi-glove', 'color' => 'text-info'],
+    4 => ['disciplina' => 'Funcional / HIIT', 'instructor' => 'Laura Beltrán', 'hora' => '07:30 PM', 'cupo_max' => 25, 'icono' => 'bi-heart-pulse-fill', 'color' => 'text-success'],
+];
+
+if (!isset($_SESSION)) { session_start(); }
+if (!isset($_SESSION['reservas_simuladas'])) { $_SESSION['reservas_simuladas'] = [1 => 5, 2 => 14, 3 => 8, 4 => 19]; }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_clase'])) {
+    $id_clase = intval($_POST['id_clase']);
+    if (isset($clases_programadas[$id_clase])) {
+        $max = $clases_programadas[$id_clase]['cupo_max'];
+        $actual = $_SESSION['reservas_simuladas'][$id_clase];
+        if ($actual < $max) {
+            $_SESSION['reservas_simuladas'][$id_clase]++;
+            $mensaje = "<div class='alert alert-success fw-bold text-center shadow-sm'><i class='bi bi-bookmark-check-fill me-2'></i> ¡Cupo asegurado para " . $clases_programadas[$id_clase]['disciplina'] . "!</div>";
+        } else {
+            $mensaje = "<div class='alert alert-danger fw-bold text-center shadow-sm'>❌ Clase sin cupos disponibles.</div>";
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Clases - Gym Kings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clases Grupales - Gym Kings</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="../assets/css/style.css?v=1.1">
+    <style>
+        body { background-color: #111; color: #fff; }
+        .class-card { background: #1a1d20; border: 1px solid #333; border-radius: 12px; transition: 0.3s; }
+        .class-card:hover { border-color: #ffc107; transform: translateY(-2px); }
+        .capacity-bar { height: 6px; background-color: #111; border-radius: 3px; overflow: hidden; }
+    </style>
 </head>
-<body class="bg-light p-4">
+<body>
 
-    <div class="container" style="max-width: 1000px;">
+    <div class="container py-5">
+        
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bolder text-dark" style="letter-spacing: -1px;">
-                <i class="bi bi-bicycle text-warning me-2"></i> Clases Grupales
-            </h2>
             <div>
-                <a href="../index.php" class="btn btn-outline-dark me-2 rounded-pill px-4"><i class="bi bi-house-door"></i> Inicio</a>
-                <a href="nueva.php" class="btn btn-dark rounded-pill px-4"><i class="bi bi-plus-lg"></i> Programar Clase</a>
+                <h1 class="fw-bolder text-white mb-0"><i class="bi bi-calendar3 text-warning me-2"></i> CLASES GRUPALES</h1>
+                <p class="text-secondary mb-0">Horarios y control de aforo por disciplinas.</p>
+            </div>
+            <div>
+                <a href="nueva.php" class="btn btn-warning rounded-pill btn-sm px-3 fw-bold text-dark me-1"><i class="bi bi-calendar-plus-fill me-1"></i> Nueva Clase</a>
+                <a href="../index.php" class="btn btn-outline-warning rounded-pill btn-sm px-3"><i class="bi bi-house-door"></i> Inicio</a>
             </div>
         </div>
 
-        <?php if (isset($_GET['mensaje']) && $_GET['mensaje'] === 'editado'): ?>
-            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i> Clase actualizada correctamente.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+        <?php echo $mensaje; ?>
 
-        <div class="table-container shadow-sm">
-            <table class="table align-middle mb-0 table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="ps-4">Clase</th>
-                        <th>Instructor</th>
-                        <th>Horario Asignado</th>
-                        <th>Cupos</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($clases) > 0): ?>
-                        <?php foreach ($clases as $clase): ?>
-                            <tr>
-                                <td class="ps-4 fw-bold text-primary"><?php echo htmlspecialchars($clase['nombre']); ?></td>
-                                <td><?php echo htmlspecialchars($clase['instructor_nombre'] . " " . $clase['instructor_apellido']); ?></td>
-                                <td>
-                                    <i class="bi bi-calendar-range text-muted me-1"></i> <?php echo htmlspecialchars($clase['horario']); ?>
-                                </td>
-                                <td class="fw-bold"><?php echo $clase['cupo_maximo']; ?></td>
-                                <td class="text-center">
-                                    <div class="btn-group shadow-sm" role="group">
-                                        <a href="editar.php?id=<?php echo $clase['id_clase']; ?>" class="btn btn-sm btn-outline-primary px-3">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <a href="eliminar.php?id=<?php echo $clase['id_clase']; ?>" class="btn btn-sm btn-outline-danger px-3" onclick="return confirm('¿Seguro que deseas cancelar esta clase?');">
-                                            <i class="bi bi-trash-fill"></i>
-                                        </a>
+        <div class="row g-4">
+            <?php foreach($clases_programadas as $id => $clase): 
+                $ocupados = $_SESSION['reservas_simuladas'][$id]; $maximo = $clase['cupo_max']; $disponibles = $maximo - $ocupados; $porcentaje = round(($ocupados / $maximo) * 100);
+                $colorBarra = ($porcentaje >= 90) ? 'bg-danger' : (($porcentaje >= 70) ? 'bg-warning' : 'bg-success');
+            ?>
+                <div class="col-lg-6 col-12">
+                    <div class="class-card p-4 h-100 d-flex flex-column justify-content-between shadow-sm">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi <?php echo $clase['icono'] . ' ' . $clase['color']; ?> fs-2 me-3"></i>
+                                    <div>
+                                        <h4 class="text-white fw-bold mb-0"><?php echo $clase['disciplina']; ?></h4>
+                                        <small class="text-muted">Coach: <?php echo $clase['instructor']; ?></small>
                                     </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr><td colspan="5" class="text-center py-5 text-muted">No hay clases programadas.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                                </div>
+                                <span class="badge bg-dark border border-secondary text-warning fs-6"><i class="bi bi-clock me-1"></i> <?php echo $clase['hora']; ?></span>
+                            </div>
+                            <hr class="border-secondary">
+                        </div>
+                        <div class="mt-2">
+                            <div class="d-flex justify-content-between text-muted small mb-1"><span>Ocupación de Sala</span><span class="fw-bold text-white"><?php echo $ocupados; ?> / <?php echo $maximo; ?> Cupos</span></div>
+                            <div class="capacity-bar mb-4"><div class="progress-bar <?php echo $colorBarra; ?>" style="width: <?php echo $porcentaje; ?>%; height: 100%;"></div></div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary" style="border-style: dashed !important;">
+                                <small class="text-muted"><strong class="text-white"><?php echo $disponibles; ?> libres</strong></small>
+                                <form action="listar.php" method="POST" class="m-0">
+                                    <input type="hidden" name="id_clase" value="<?php echo $id; ?>">
+                                    <button type="submit" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold text-dark shadow-sm" <?php echo ($disponibles <= 0) ? 'disabled' : ''; ?>><i class="bi bi-bookmark-plus-fill me-1"></i> Reservar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </body>

@@ -89,7 +89,7 @@ try {
         
         <div class="d-flex justify-content-between align-items-center mb-4 no-print">
             <div>
-                <h1 class="fw-bolder text-white mb-0">GYM KINGS DASHBOARD</h1>
+                <h1 class="fw-bolder text-white mb-0">KINGS REPORTS</h1>
                 <p class="text-secondary mb-0">Módulo de analítica y control financiero centralizado.</p>
             </div>
             <a href="../index.php" class="btn btn-outline-secondary rounded-pill btn-sm px-3"><i class="bi bi-arrow-left"></i> Panel</a>
